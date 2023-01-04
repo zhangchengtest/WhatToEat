@@ -1,5 +1,6 @@
 // pages/menu/menu.js
-const config = require('../index/config.js');
+const config = require('../config/config');
+const util = require('../../utils/util.js');
 var Zan = require('../../wxss/dist/index');
 
 Page(Object.assign({}, Zan.Switch, {
@@ -17,7 +18,9 @@ Page(Object.assign({}, Zan.Switch, {
     checked: true,
     dishesObjects: null,
     loading: true,
-    edited: false
+    edited: false,
+    eatType: ["早餐", "午餐", "晚餐", "夜宵"],
+    eatTypeIndex: 0
   },
 
   handleZanSwitchChange(e) {
@@ -35,80 +38,67 @@ Page(Object.assign({}, Zan.Switch, {
    * 生命周期函数--监听页面加载
    */
   onLoad: function (options) {
+    this.data.eatTypeIndex = options.eatType;
+    this.setData({
+      eatTypeIndex: options.eatType
+    })
   },
   getDishesObjects(){
     var that = this
-    wx.getStorage({
-      key: 'dishesObjects',
-      success: function (res) {
-        console.log("成功获取到数据...")
-        console.log(res)
-        that.setData({
-          dishesObjects: res.data,
-          loading: false
-        });
-      },
-      fail: function (e) {
-        console.log(e,"没有找到，从配置中加载默认数据")
-        //没有找到，从配置中加载默认数据
-        wx.setStorage({
-          key: "dishesObjects",
-          data: config.dishesObjects,
-          success: function (res){
-            console.log("存储成功，重新读取...");
-            that.getDishesObjects();
-          },
-          fail: function () {
-            console.log("存储失败，提示用户...");
-          }
-        })
-      }
-    })
+
+    util.request(config.WxApiRoot+"/api/food/search", { "eatType": that.data.eatTypeIndex }).then(function (res) {
+      console.log(res.pageData);
+      that.setData({
+        dishesObjects: res.pageData,
+        loading: false
+      });
+
+    });
+    // wx.getStorage({
+    //   key: 'dishesObjects',
+    //   success: function (res) {
+    //     console.log("成功获取到数据...")
+    //     console.log(res)
+    //     that.setData({
+    //       dishesObjects: res.data,
+    //       loading: false
+    //     });
+    //   },
+    //   fail: function (e) {
+    //     console.log(e,"没有找到，从配置中加载默认数据")
+    //     //没有找到，从配置中加载默认数据
+    //     wx.setStorage({
+    //       key: "dishesObjects",
+    //       data: config.dishesObjects,
+    //       success: function (res){
+    //         console.log("存储成功，重新读取...");
+    //         that.getDishesObjects();
+    //       },
+    //       fail: function () {
+    //         console.log("存储失败，提示用户...");
+    //       }
+    //     })
+    //   }
+    // })
   },
-  save: function () {
-    var that = this
-    wx.setStorage({
-      key: "dishesObjects",
-      data: that.data.dishesObjects,
-      success: function (res) {
-        console.log("存储成功，重新读取...");
-        that.getDishesObjects();
-        wx.showModal({
-          title: '提示',
-          content: '保存成功',
-          showCancel: false,
-          success: function (res) {
-            that.setData({
-              edited: false
-            })
-          }
-        })
-      },
-      fail: function () {
-        console.log("存储失败，提示用户...");
-        wx.showModal({
-          title: '提示',
-          content: '保存失败',
-          showCancel: false,
-          success: function (res) {
-            wx.navigateBack({
-              delta: 1
-            })
-          }
-        })
-      }
-    })
-  },
+ 
   deleteDish: function(e){
     var index = e.currentTarget.dataset.did
-    var array = this.data.dishesObjects
-    array.splice(index, 1)
-    this.setData({
-      dishesObjects : array
-    })
-    this.setData({
-      edited: true
-    })
+    var foodId = this.data.dishesObjects[index].foodId
+
+
+    util.request(config.WxApiRoot +"/api/food/delete/" + foodId).then(function (res) {
+      console.log(res);
+      
+    });
+    this.getDishesObjects();
+    // array.splice(index, 1)
+    // this.setData({
+    //   dishesObjects : array
+    // })
+    // this.setData({
+    //   edited: true
+    // })
   },
   setDefault: function(){
     var that = this
@@ -144,7 +134,7 @@ Page(Object.assign({}, Zan.Switch, {
       })
     }else{
       wx.navigateTo({
-        url: '../menu_add/menu_add'
+        url: '../menu_add/menu_add?eatType=' + this.data.eatTypeIndex
       })
     }
   },
@@ -162,6 +152,7 @@ Page(Object.assign({}, Zan.Switch, {
    * 生命周期函数--监听页面显示
    */
   onShow: function () {
+    console.log("hihi")
     this.getDishesObjects()
   },
   /**

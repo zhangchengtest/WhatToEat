@@ -1,6 +1,7 @@
 var Zan = require('../../wxss/dist/index');
 
-const config = require('./config');
+const config = require('../config/config');
+const util = require('../../utils/util.js');
 const app = getApp()
 const timer = null
 
@@ -39,9 +40,9 @@ Page(Object.assign({}, Zan.TopTips, {
   data: {
     config,
     dishesObjects: null,
-    dish: "今天吃什么呢？",
+    dish: "吃什么呢？",
     keyword: '',
-    btnText:"开始！",
+    btnText:"随机选择",
     isProcess:false,
     motto: 'Hello World',
     userInfo: {},
@@ -53,7 +54,7 @@ Page(Object.assign({}, Zan.TopTips, {
     // peopleIndex: 0,
     budget: ["不限", "随便凑合", "大吃一顿"],
     budgetIndex: 0,
-    eatType: ["不限", "早餐", "午餐",  "晚餐", "夜宵"],
+    eatType: ["早餐", "午餐",  "晚餐", "夜宵"],
     eatTypeIndex: 0
   },
   //事件处理函数
@@ -75,14 +76,17 @@ Page(Object.assign({}, Zan.TopTips, {
     });
   },
   onEatTypeChange(e) {
-    this.showTopTips();
     this.setData({
-      eatTypeIndex: e.detail.value
+      eatTypeIndex: e.detail.value,
+      dish: this.data.eatType[e.detail.value] + "吃什么呢？"
     });
+   
+    this.getDishesObjects();
+    
   },
   toCustomMenu: function () {
     wx.navigateTo({
-      url: '../menu/menu'
+      url: '../menu/menu?eatType=' + this.data.eatTypeIndex
     })
   },
   toPie: function () {
@@ -109,40 +113,19 @@ Page(Object.assign({}, Zan.TopTips, {
         console.log("停止")
         this.setData({
           isProcess: false,
-          btnText: "开始！"
+          btnText: "随机选择"
         })
 
-        wx.showModal({
-          title: '成功！',
-          content: '今天就吃' + that.data.dish + "！",
-          confirmText: "好！",
-          cancelText: "不吃，换",
-          success: function (res) {
-            if (res.confirm) {
-              console.log('用户点击确定')
-              // todo 记录数据
-              that.recordData(that.data.dish);
-              wx.navigateTo({
-                url: '../map/map?dish=' + that.data.dish + '&keyword=' + that.data.keyword
-              })
-            } else if (res.cancel) {
-              console.log('用户点击取消')
-            }
-          }
-        })
       } else {
         console.log("开始")
 
-        console.log(that.data.dishesObjects.length)
-        var newDishes = that.dishesFillter(
-          that.data.dishesObjects,
-          that.data.budgetIndex,
-          that.data.eatTypeIndex
-        );
+        console.log("length:"+that.data.dishesObjects.length)
+        var newDishes = that.data.dishesObjects;
+        console.log("length:" + newDishes)
         if (newDishes.length > 0) {
           this.setData({
             isProcess: true,
-            btnText: "决定了！"
+            btnText: "就它吧"
           })
           this.data.timer = setInterval(function () {
             var randomIndex = Math.floor((Math.random() * 100 % newDishes.length))
@@ -166,6 +149,11 @@ Page(Object.assign({}, Zan.TopTips, {
     }
   },
   onLoad: function () {
+    
+    this.setData({
+      dish: this.data.eatType[this.data.eatTypeIndex] + "吃什么呢？"
+    })
+   
     if (app.globalData.userInfo) {
       this.setData({
         userInfo: app.globalData.userInfo,
@@ -199,8 +187,10 @@ Page(Object.assign({}, Zan.TopTips, {
       })
     }
     this.checkUpdate();
+    
   },
   getUserInfo: function(e) {
+    console.log("hello");
     console.log(e)
     app.globalData.userInfo = e.detail.userInfo
     this.setData({
@@ -211,84 +201,46 @@ Page(Object.assign({}, Zan.TopTips, {
   showTopTips() {
     //this.showZanTopTips('条件选择暂时没法用，因为还没写完，我传上来看看效果');
   },
-  //根据条件筛选出合适的列表
-  dishesFillter(dishObjects, budgetIndex, eatTypeIndex){
-    console.log("筛选", budgetIndex, eatTypeIndex)
-    var newDishes = new Array()
-    //对每个美食进行过滤
-    for(var dishObjectIndex in dishObjects){
-      var pass = true;
-      var dishObject = dishObjects[dishObjectIndex]
-      //判断消费类型
-      switch (parseInt(budgetIndex)) {
-        case 1:
-          //判断是否为“随便凑合”
-          if (!(dishObject.level === 1)) pass = false
-          break;
-        case 2:
-          //判断是否为“大吃一顿”
-          if (!(dishObject.level === 2)) pass = false
-          break;
-        default:
-      }
-      //判断就餐类型
-      switch (parseInt(eatTypeIndex)) {
-        case 1:
-          //判断是否为早餐
-          if (!dishObject.breakfast) pass = false
-          break;
-        case 2:
-          //判断是否为午餐
-          if (!dishObject.lunch) pass = false
-          break;
-        case 3:
-          //判断是否为晚餐
-          if (!dishObject.dinner) pass = false
-          break;
-        case 4:
-          //判断是否为夜宵
-          if (!dishObject.night) pass = false
-          break;
-        default:
-      }
-      if (!dishObject.on){
-        pass = false
-      }
-      //如果通过筛选则加到数组中
-      if(pass){
-        newDishes.push(dishObject)
-      }
-    }
-    return newDishes
-  },
+ 
   getDishesObjects() {
     var that = this
-    wx.getStorage({
-      key: 'dishesObjects',
-      success: function (res) {
-        console.log("成功获取到数据...")
-        console.log(res)
+
+
+    util.request(config.WxApiRoot+"/api/food/search", { "eatType": that.data.eatTypeIndex } ).then(function (res) {
+      console.log(res.pageData);
         that.setData({
-          dishesObjects: res.data,
+          dishesObjects: res.pageData,
           loading: false
         });
-      },
-      fail: function (e) {
-        console.log(e, "没有找到，从配置中加载默认数据")
-        //没有找到，从配置中加载默认数据
-        wx.setStorage({
-          key: "dishesObjects",
-          data: config.dishesObjects,
-          success: function (res) {
-            console.log("存储成功，重新读取...");
-            that.getDishesObjects();
-          },
-          fail: function () {
-            console.log("存储失败，提示用户...");
-          }
-        })
-      }
-    })
+      
+    });
+
+    // wx.getStorage({
+    //   key: 'dishesObjects',
+    //   success: function (res) {
+    //     console.log("成功获取到数据...")
+    //     console.log(res)
+    //     that.setData({
+    //       dishesObjects: res.data,
+    //       loading: false
+    //     });
+    //   },
+    //   fail: function (e) {
+    //     console.log(e, "没有找到，从配置中加载默认数据")
+    //     //没有找到，从配置中加载默认数据
+    //     wx.setStorage({
+    //       key: "dishesObjects",
+    //       data: config.dishesObjects,
+    //       success: function (res) {
+    //         console.log("存储成功，重新读取...");
+    //         that.getDishesObjects();
+    //       },
+    //       fail: function () {
+    //         console.log("存储失败，提示用户...");
+    //       }
+    //     })
+    //   }
+    // })
   },
   recordData(dishName){
     wx.getStorage({
@@ -338,6 +290,7 @@ Page(Object.assign({}, Zan.TopTips, {
   checkUpdate(){
   },
   bindGetUserInfo: function (e) {
+    console.log("hello2");
     console.log(e.detail.userInfo)
     this.setData({
       userInfo: e.detail.userInfo,

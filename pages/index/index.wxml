@@ -17,11 +17,7 @@
     <view style="padding: 15px;">{{dish}}</view>
   </view>
 
-  <view class="zan-panel">
-    <view class="zan-btns">
-      <button class="zan-btn zan-btn--primary" bindtap='bindClickTap'>{{btnText}}</button>
-    </view>
-  </view>
+ 
   <view class="zan-panel">
     <!-- <view class="zan-cell zan-field">
       <view class="zan-cell__hd zan-field__title">就餐人数</view>
@@ -34,7 +30,7 @@
         {{ people[peopleIndex] }}
       </picker>
     </view> -->
-    <view class="zan-cell zan-field">
+    <!-- <view class="zan-cell zan-field">
       <view class="zan-cell__hd zan-field__title">消费类型</view>
       <picker
         mode="selector"
@@ -44,9 +40,9 @@
         bindchange="onBudgetChange">
         {{ budget[budgetIndex] }}
       </picker>
-    </view>
+    </view> -->
     <view class="zan-cell zan-field">
-      <view class="zan-cell__hd zan-field__title">就餐类型</view>
+     
       <picker
         mode="selector"
         class="zan-field__input zan-cell__bd"
@@ -55,14 +51,19 @@
         bindchange="onEatTypeChange">
         {{ eatType[eatTypeIndex] }}
       </picker>
+       <button class="zan-btn zan-btn--small" bindtap='toCustomMenu'>自定义菜单</button>
     </view>
   </view>  
   <view class="footer-nav">
-    <button class="zan-btn zan-btn--small" bindtap='toCustomMenu'>自定义菜单</button>
-    <button class="zan-btn zan-btn--small" bindtap='toPie'>数据统计</button>
+    <!-- <button class="zan-btn zan-btn--small" bindtap='toCustomMenu'>自定义菜单</button> -->
+    <!-- <button class="zan-btn zan-btn--small" bindtap='toPie'>数据统计</button> -->
   </view>
 
-  <view class="footer-nav footer-plus">
+ <view class="zan-btns">
+      <button class="zan-btn zan-btn--primary" bindtap='bindClickTap'>{{btnText}}</button>
+    </view>
+  
+  <!-- <view class="footer-nav footer-plus">
     <hr></hr>
     <view 
       class='footer-view' 
@@ -72,5 +73,5 @@
     </view>
     <view>Copyright © 2017-2018 WhatToEat</view>
   </view>
-  <template is="zan-toptips" data="{{ zanTopTips }}"></template>
+  <template is="zan-toptips" data="{{ zanTopTips }}"></template> -->
 </view>

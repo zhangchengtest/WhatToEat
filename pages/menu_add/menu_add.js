@@ -1,6 +1,7 @@
 // pages/menu_add/menu_add.js
 const Zan = require('../../wxss/dist/index');
-const config = require('./config');
+const util = require('../../utils/util.js');
+const config = require('../config/config');
 Page(Object.assign({}, Zan.Field, Zan.Switch, {
 
   /**
@@ -12,6 +13,7 @@ Page(Object.assign({}, Zan.Field, Zan.Switch, {
     keyword: '',
     level: ['随便凑合', '大吃一顿'],
     levelIndex: 0,
+    eatTypeIndex: 0,
     sw: {
       breakfast: true,
       lunch: true,
@@ -56,88 +58,89 @@ Page(Object.assign({}, Zan.Field, Zan.Switch, {
   },
   save:function(){
     console.log(this.data.title)
-    console.log(this.data.keyword)
-    console.log(this.data.levelIndex)
-    console.log(this.data.sw.breakfast)
-    console.log(this.data.sw.lunch)
-    console.log(this.data.sw.dinner)
-    console.log(this.data.sw.night)
+    
     if (this.data.title === ''){
       wx.showModal({
         title: '提示',
         content: '请填写标题',
         showCancel: false
       })
-    } else if (this.data.keyword===''){
-      wx.showModal({
-        title: '提示',
-        content: '请填写搜索词',
-        showCancel: false
-      })
-    }else{
+    } else{
       var dish = {
         "name": this.data.title,
-        "level": this.data.levelIndex + 1,
-        "breakfast": this.data.sw.breakfast,
-        "lunch": this.data.sw.lunch,
-        "dinner": this.data.sw.dinner,
-        "night": this.data.sw.night,
-        "on": true,
-        "keyword": this.data.keyword,
-        "custom": true
+        "eatType": this.data.eatTypeIndex
+        
       }
 
-      wx.getStorage({
-        key: 'dishesObjects',
-        success: function (res) {
-          console.log("成功获取到数据...")
-          console.log(res)
-          res.data.push(dish)
-          wx.setStorage({
-            key: "dishesObjects",
-            data: res.data,
-            success: function (res) {
-              console.log("存储成功，返回上一页...");
-              wx.showModal({
-                title: '提示',
-                content: '保存成功',
-                showCancel: false,
-                success: function (res) {
-                  wx.navigateBack({
-                    delta: 1
-                  })
-                }
-              })
-            },
-            fail: function () {
-              console.log("存储失败，提示用户...");
-              wx.showModal({
-                title: '提示',
-                content: '保存失败',
-                showCancel: false,
-                success: function (res) {
-                  wx.navigateBack({
-                    delta: 1
-                  })
-                }
-              })
-            }
-          })
-        },
-        fail: function (e) {
-          console.log(e, "没有找到，从配置中加载默认数据")
-          wx.showModal({
-            title: '提示',
-            content: '菜单丢失，返回首页重新加载...',
-            showCancel: false,
-            success: function (res) {
-              wx.navigateBack({
-                delta: 2
-              })
-            }
-          })
-        }
-      })
+      util.request(config.WxApiRoot +"/api/food/save", dish).then(function (res) {
+        console.log(res);
+        wx.navigateBack({
+          delta: 1
+        })
+        // wx.showModal({
+        //   title: '提示',
+        //   content: '保存成功',
+        //   showCancel: false,
+        //   success: function (res) {
+        //     wx.navigateBack({
+        //       delta: 1
+        //     })
+        //   }
+        // })
+
+      });
+
+      // wx.getStorage({
+      //   key: 'dishesObjects',
+      //   success: function (res) {
+      //     console.log("成功获取到数据...")
+      //     console.log(res)
+      //     res.data.push(dish)
+      //     wx.setStorage({
+      //       key: "dishesObjects",
+      //       data: res.data,
+      //       success: function (res) {
+      //         console.log("存储成功，返回上一页...");
+      //         wx.showModal({
+      //           title: '提示',
+      //           content: '保存成功',
+      //           showCancel: false,
+      //           success: function (res) {
+      //             wx.navigateBack({
+      //               delta: 1
+      //             })
+      //           }
+      //         })
+      //       },
+      //       fail: function () {
+      //         console.log("存储失败，提示用户...");
+      //         wx.showModal({
+      //           title: '提示',
+      //           content: '保存失败',
+      //           showCancel: false,
+      //           success: function (res) {
+      //             wx.navigateBack({
+      //               delta: 1
+      //             })
+      //           }
+      //         })
+      //       }
+      //     })
+      //   },
+      //   fail: function (e) {
+      //     console.log(e, "没有找到，从配置中加载默认数据")
+      //     wx.showModal({
+      //       title: '提示',
+      //       content: '菜单丢失，返回首页重新加载...',
+      //       showCancel: false,
+      //       success: function (res) {
+      //         wx.navigateBack({
+      //           delta: 2
+      //         })
+      //       }
+      //     })
+      //   }
+      // })
     }
   },
 
@@ -145,7 +148,7 @@ Page(Object.assign({}, Zan.Field, Zan.Switch, {
    * 生命周期函数--监听页面加载
    */
   onLoad: function (options) {
-  
+    this.data.eatTypeIndex = options.eatType;
   },
 
   /**
